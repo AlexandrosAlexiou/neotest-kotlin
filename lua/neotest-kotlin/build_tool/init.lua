@@ -8,6 +8,7 @@ local gradle = require("neotest-kotlin.build_tool.gradle")
 ---@field get_sources_glob fun(): string
 ---@field source_dir fun(): string
 ---@field get_test_sources_glob fun(): string
+---@field get_jvm_target fun(): string
 ---@field get_resources fun(): string[]
 local BuildTool = {}
 

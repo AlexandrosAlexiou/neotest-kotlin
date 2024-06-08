@@ -11,10 +11,9 @@ local result_builder = require("neotest-kotlin.core.result_builder")
 
 local detect_project_type = require("neotest-kotlin.util.detect_project_type")
 local there_is_wrapper_in = require("neotest-kotlin.util.there_is_wrapper_in")
-local run = require("neotest-kotlin.command.run")
 
 local check_junit_jar = function(filepath)
-  local exists, err = File.exists(filepath)
+  local exists, _ = File.exists(filepath)
   assert(
     exists,
     ([[
@@ -78,19 +77,23 @@ function NeotestKotlinAdapter.build_spec(args)
   -- TODO: find a way to avoid to make this steps every time
 
   -- find root
+  ---@diagnostic disable-next-line: undefined-field
   local root = self.root(args.tree:data().path)
 
   -- detect project type
+  ---@diagnostic disable-next-line: inject-field, param-type-mismatch
   self.project_type = detect_project_type(root)
 
   -- decide to ignore wrapper or not
   local ignore_wrapper = self.config.ignore_wrapper
   if not ignore_wrapper then
+    ---@diagnostic disable-next-line: param-type-mismatch
     ignore_wrapper = not there_is_wrapper_in(root)
   end
 
   -- build spec
-  return spec_builder.build_spec(args, self.project_type, ignore_wrapper, self.config)
+  local res = spec_builder.build_spec(args, self.project_type, ignore_wrapper, self.config)
+  return res
 end
 
 ---@async

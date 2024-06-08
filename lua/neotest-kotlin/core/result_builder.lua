@@ -1,3 +1,4 @@
+---@diagnostic disable: undefined-doc-name, undefined-doc-param
 local xml = require("neotest.lib.xml")
 local read_file = require("neotest-kotlin.util.read_file")
 
@@ -70,6 +71,7 @@ function ResultBuilder.build_results(spec, _, tree)
 
   local testcases = {}
 
+  ---@diagnostic disable-next-line: undefined-field
   local filename = spec.context.report_file or "/tmp/neotest-kotlin/TEST-junit-jupiter.xml"
   local ok, data = pcall(function()
     return read_file(filename)
@@ -94,6 +96,7 @@ function ResultBuilder.build_results(spec, _, tree)
     testcases[build_unique_key(classname, name)] = testcase
   end
 
+  ---@diagnostic disable-next-line: undefined-field
   for _, v in tree:iter_nodes() do
     local node_data = v:data()
     local is_test = node_data.type == "test"

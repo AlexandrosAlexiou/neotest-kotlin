@@ -1,3 +1,5 @@
+---@diagnostic disable: undefined-field, undefined-doc-name
+
 local root_finder = require("neotest-kotlin.core.root_finder")
 local CommandBuilder = require("neotest-kotlin.command.junit_command_builder")
 local resolve_qualfied_name = require("neotest-kotlin.util.resolve_qualified_name")
@@ -7,7 +9,7 @@ SpecBuilder = {}
 ---@param args neotest.RunArgs
 ---@param project_type string
 ---@return nil | neotest.RunSpec | neotest.RunSpec[]
-function SpecBuilder.build_spec(args, project_type, ignore_wrapper, config)
+function SpecBuilder.build_spec(args, project_type, _, config)
   local command = CommandBuilder:new(config, project_type)
   local position = args.tree:data()
   local root = root_finder.find_root(position.path)

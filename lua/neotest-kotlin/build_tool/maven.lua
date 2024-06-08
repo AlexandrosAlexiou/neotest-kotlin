@@ -1,6 +1,7 @@
+local Path = require("plenary.path")
+local scan = require("plenary.scandir")
 local run = require("neotest-kotlin.command.run")
 local read_xml_tag = require("neotest-kotlin.util.read_xml_tag")
-local scan = require("plenary.scandir")
 local mvn = require("neotest-kotlin.command.binaries").mvn
 local logger = require("neotest.logging")
 
@@ -10,13 +11,6 @@ local memoized_result
 local maven = {}
 
 maven.source_directory = function()
-  local tag_content = read_xml_tag("pom.xml", "project.build.sourceDirectory")
-
-  if tag_content then
-    logger.debug("Found sourceDirectory in pom.xml: " .. tag_content)
-    return tag_content
-  end
-
   return "src/main/kotlin"
 end
 
@@ -57,6 +51,12 @@ maven.get_resources = function()
   return { "src/main/resources", "src/test/resources" }
 end
 
+--@return string
+maven.get_jvm_target = function()
+  local jvm_target = read_xml_tag("pom.xml", "project.properties.java.version")
+  return jvm_target or "21"
+end
+
 ---@return string
 maven.get_dependencies_classpath = function()
   if memoized_result then
@@ -65,7 +65,16 @@ maven.get_dependencies_classpath = function()
 
   local command = mvn() .. " -q dependency:build-classpath -Dmdep.outputFile=target/neotest-kotlin/classpath.txt"
   run(command)
-  local dependency_classpath = run("cat target/neotest-kotlin/classpath.txt")
+
+  local classpath_file = "target/neotest-kotlin/classpath.txt"
+  if not Path:new(classpath_file):exists() then
+    error("Classpath file not found: " .. classpath_file)
+  end
+
+  local dependency_classpath = ""
+  for line in io.lines(classpath_file) do
+    dependency_classpath = dependency_classpath .. line
+  end
 
   if string.match(dependency_classpath, "ERROR") then
     error('error while running command "' .. command .. '" -> ' .. dependency_classpath)
@@ -81,7 +90,7 @@ maven.write_classpath = function(filepath)
   -- create folder if not exists
   run("mkdir -p " .. filepath:match("(.+)/[^/]+"))
 
-  -- remeve file if exists
+  -- remove file if exists
   run("rm -f " .. filepath)
 
   -- write in file per buffer of 500 characters

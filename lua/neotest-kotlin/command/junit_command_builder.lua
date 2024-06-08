@@ -5,25 +5,14 @@ local kotlinc = binaries.kotlinc
 local java = binaries.java
 
 local function wrap_command_as_bash(command)
-  return ([=[
-  bash -O globstar -c '
-    %s
-  '
-  ]=]):format(command)
+  return ([=[bash -c '%s']=]):format(command)
 end
 
 local stop_command_when_line_containing = function(command, word)
-  return ([=[
-  { %s | while IFS= read -r line; do
-        echo "$line"
-        if [[ "$line" == *"%s"* ]]; then
-            pkill -9 -P $$
-            exit
-        fi
-    done
-  } &
-  wait $!
-  ]=]):format(command, word)
+  return ([=[ { %s | while IFS= read -r line; do echo "$line"; if [[ "$line" == *"%s"* ]]; then pkill -9 -P $$; exit; fi; done; } & wait $! ]=]):format(
+    command,
+    word
+  )
 end
 
 --- @class CommandBuilder
@@ -61,6 +50,7 @@ local CommandBuilder = {
     return self
   end,
 
+  ---@diagnostic disable-next-line: unused-local
   ignore_wrapper = function(self, ignore_wrapper)
     -- do nothing
   end,
@@ -83,7 +73,7 @@ local CommandBuilder = {
     return methods
   end,
 
-  _create_method_qualified_reference = function(self, qualified_name, method_name)
+  _create_method_qualified_reference = function(_, qualified_name, method_name)
     if method_name == nil then
       return qualified_name
     end
@@ -116,6 +106,7 @@ local CommandBuilder = {
     local resources = table.concat(build_tool.get_resources(), ":")
     local source_classes_glob = build_tool.get_sources_glob()
     local test_classes_glob = build_tool.get_test_sources_glob()
+    local jvm_target = build_tool.get_jvm_target()
 
     local ref
     if reference.type == "test" then
@@ -130,10 +121,11 @@ local CommandBuilder = {
     build_tool.write_classpath(classpath_filename)
 
     local source_compilation_command = [[
-      {{kotlinc}} -Xlint:none -d {{output_dir}} -cp $(cat {{classpath_filename}}) {{source_classes_glob}}
+      {{kotlinc}} -jvm-target {{jvm_target}} -d {{output_dir}} -cp $(cat {{classpath_filename}}) {{source_classes_glob}}
     ]]
+
     local test_compilation_command = [[
-      {{kotlinc}} -Xlint:none -d {{output_dir}} -cp $(cat {{classpath_filename}}):{{output_dir}} {{test_classes_glob}}
+      {{kotlinc}} -jvm-target {{jvm_target}} -d {{output_dir}} -cp $(cat {{classpath_filename}}):{{output_dir}} {{test_classes_glob}}
     ]]
 
     local test_execution_command = [[
@@ -151,6 +143,7 @@ local CommandBuilder = {
     -- replace placeholders
     local placeholders = {
       ["{{kotlinc}}"] = kotlinc(),
+      ["{{jvm_target}}"] = jvm_target,
       ["{{java}}"] = java(),
       ["{{junit_jar}}"] = self._junit_jar,
       ["{{resources}}"] = resources,
@@ -172,6 +165,7 @@ local CommandBuilder = {
 
     command = wrap_command_as_bash(command)
 
+    vim.notify("command: " .. command)
     return command
   end,
 }
