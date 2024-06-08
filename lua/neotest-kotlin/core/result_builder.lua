@@ -147,8 +147,8 @@ function ResultBuilder.build_results(spec, _, tree)
           }
         elseif test_case.failure then
           local message = test_case.failure._attr.message
-          local filename = string.match(test_case._attr.classname, "[%.]?([%a%$_][%a%d%$_]+)$") .. ".kt"
-          local line_searchpattern = string.gsub(filename, "%.", "%%.") .. ":(%d+)%)"
+          local testCaseFilename = string.match(test_case._attr.classname, "[%.]?([%a%$_][%a%d%$_]+)$") .. ".kt"
+          local line_searchpattern = string.gsub(testCaseFilename, "%.", "%%.") .. ":(%d+)%)"
           local line = string.match(test_case.failure[1], line_searchpattern)
           -- NOTE: errors array is expecting lines properties to be 0 index based
           if line ~= nil then
